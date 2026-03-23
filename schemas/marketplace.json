@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MarketplaceResult",
+  "type": "object",
+  "required": ["platform", "price", "currency", "url"],
+  "properties": {
+    "platform": {
+      "type": "string",
+      "description": "Marketplace name (Amazon, Flipkart)"
+    },
+    "title": {
+      "type": ["string", "null"],
+      "description": "Product title as shown on the marketplace"
+    },
+    "price": {
+      "type": "number",
+      "description": "Product price"
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["INR"]
+    },
+    "rating": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 5
+    },
+    "reviews_count": {
+      "type": ["integer", "null"]
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

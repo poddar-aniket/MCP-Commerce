@@ -1,0 +1,41 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "RankedMarketplaceResult",
+  "type": "object",
+  "required": ["rank", "platform", "price", "currency", "url"],
+  "properties": {
+    "rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Rank position (1 = best)"
+    },
+    "platform": {
+      "type": "string",
+      "description": "Marketplace name"
+    },
+    "title": {
+      "type": ["string", "null"],
+      "description": "Product title"
+    },
+    "price": {
+      "type": "number",
+      "description": "Product price"
+    },
+    "currency": {
+      "type": "string",
+      "enum": ["INR"]
+    },
+    "rating": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 5
+    },
+    "reviews_count": {
+      "type": ["integer", "null"]
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    }
+  }
+}

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Shopping Assistant</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Custom Theme Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0f172a', /* slate-900 */
+                        darkCard: '#1e293b', /* slate-800 */
+                        primary: '#3b82f6', /* blue-500 */
+                        primaryHover: '#2563eb', /* blue-600 */
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        
+        /* Custom scrollbars for chat container */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2); 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3); 
+        }
+
+        /* Product Carousel Hiding Scrollbar but keeping functionality */
+        .hide-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Loading Dots Animation */
+        .dot-flashing {
+            position: relative;
+            width: 8px;
+            height: 8px;
+            border-radius: 5px;
+            background-color: #94a3b8;
+            color: #94a3b8;
+            animation: dotFlashing 1s infinite linear alternate;
+            animation-delay: 0.5s;
+        }
+        .dot-flashing::before, .dot-flashing::after {
+            content: '';
+            display: inline-block;
+            position: absolute;
+            top: 0;
+        }
+        .dot-flashing::before {
+            left: -12px;
+            width: 8px;
+            height: 8px;
+            border-radius: 5px;
+            background-color: #94a3b8;
+            color: #94a3b8;
+            animation: dotFlashing 1s infinite alternate;
+            animation-delay: 0s;
+        }
+        .dot-flashing::after {
+            left: 12px;
+            width: 8px;
+            height: 8px;
+            border-radius: 5px;
+            background-color: #94a3b8;
+            color: #94a3b8;
+            animation: dotFlashing 1s infinite alternate;
+            animation-delay: 1s;
+        }
+        @keyframes dotFlashing {
+            0% { background-color: #94a3b8; }
+            50%, 100% { background-color: rgba(148, 163, 184, 0.2); }
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col font-sans antialiased selection:bg-blue-500/30">
+
+    <!-- Fixed Header -->
+    <header class="w-full bg-darkCard/90 backdrop-blur-md border-b border-white/10 sticky top-0 z-50 flex-none">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
+                <span class="text-2xl">🛒</span> MCP Shopping Assistant
+            </h1>
+            <button id="clear-chat-btn" class="text-xs text-slate-400 hover:text-white bg-white/5 hover:bg-white/10 px-3 py-1.5 rounded-lg transition-colors border border-white/10">Clear Chat</button>
+        </div>
+    </header>
+
+    <!-- Scrollable Chat History -->
+    <main id="chat-container" class="flex-1 w-full max-w-4xl mx-auto p-4 md:p-6 overflow-y-auto flex flex-col gap-6">
+        
+        <!-- Welcome Message -->
+        <div class="flex flex-col items-start max-w-[85%] animate-fade-in">
+            <div class="bg-darkCard border border-white/5 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm text-slate-200">
+                <p class="text-[15px] leading-relaxed">
+                    Hello! I am your AI aggregator for Amazon, eBay, and Walmart. What are you looking to buy today?
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Fixed Input Area -->
+    <footer class="w-full bg-darkBg border-t border-white/5 p-4 flex-none shadow-[0_-10px_40px_rgba(0,0,0,0.2)]">
+        
+        <!-- Selectors -->
+        <div class="max-w-4xl mx-auto mb-2 flex justify-end gap-2">
+            <select id="condition-select" class="bg-darkCard border border-white/10 text-slate-300 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 cursor-pointer transition-all appearance-none pr-8 relative" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'16\\' height=\\'16\\' fill=\\'none\\' viewBox=\\'0 0 24 24\\' stroke=\\'%2394a3b8\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M19 9l-7 7-7-7\\'/></svg>'); background-repeat: no-repeat; background-position: right 8px center;">
+                <option value="any">Any Condition</option>
+                <option value="new">Brand New Only</option>
+                <option value="refurbished">Refurbished / Used</option>
+            </select>
+            
+            <select id="result-mode-select" class="bg-darkCard border border-white/10 text-slate-300 text-xs rounded-lg px-3 py-1.5 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 cursor-pointer transition-all appearance-none pr-8 relative" style="background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'16\\' height=\\'16\\' fill=\\'none\\' viewBox=\\'0 0 24 24\\' stroke=\\'%2394a3b8\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M19 9l-7 7-7-7\\'/></svg>'); background-repeat: no-repeat; background-position: right 8px center;">
+                <option value="top_5_overall">Top 5 Overall (Cheapest)</option>
+                <option value="top_1_each">Best from Each Store (Amazon, eBay, Walmart)</option>
+            </select>
+        </div>
+
+        <form id="chat-form" class="max-w-4xl mx-auto flex items-end gap-3 rounded-2xl bg-darkCard border border-white/10 p-2 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/50 transition-all">
+            
+            <textarea 
+                id="chat-input" 
+                rows="1"
+                placeholder="Message your shopping assistant..." 
+                class="flex-1 bg-transparent text-white px-4 py-3 outline-none resize-none max-h-32 placeholder:text-slate-500 text-[15px]"
+                required
+            ></textarea>
+
+            <button 
+                type="submit" 
+                id="send-button"
+                class="flex-none p-3 mb-1 bg-primary hover:bg-primaryHover text-white rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed hidden md:flex"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+            <button 
+                type="submit" 
+                class="flex-none p-3 mb-1 bg-primary text-white rounded-xl md:hidden"
+            >
+                Send
+            </button>
+        </form>
+        <p class="text-center text-xs text-slate-500 mt-3 max-w-4xl mx-auto">
+            Powered by the MCP Commerce Engine. Prices and availability may vary.
+        </p>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        const API_URL = 'http://localhost:8000/api/search';
+        let chatHistory = JSON.parse(localStorage.getItem('mcpChatHistory')) || [];
+
+        function saveHistory() {
+            chatHistory = chatHistory.slice(-10);
+            localStorage.setItem('mcpChatHistory', JSON.stringify(chatHistory));
+        }
+
+        const chatContainer = document.getElementById('chat-container');
+        const chatForm = document.getElementById('chat-form');
+        const chatInput = document.getElementById('chat-input');
+        const sendButton = document.getElementById('send-button');
+        const clearChatBtn = document.getElementById('clear-chat-btn');
+
+        clearChatBtn.addEventListener('click', () => {
+            localStorage.removeItem('mcpChatHistory');
+            chatHistory = [];
+            chatContainer.innerHTML = `
+                <div class="flex flex-col items-start max-w-[85%] animate-fade-in">
+                    <div class="bg-darkCard border border-white/5 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm text-slate-200">
+                        <p class="text-[15px] leading-relaxed">
+                            Hello! I am your AI aggregator for Amazon, eBay, and Walmart. What are you looking to buy today?
+                        </p>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Auto-resize textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            if (this.value.trim() !== '') {
+                sendButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                sendButton.removeAttribute('disabled');
+            } else {
+                sendButton.classList.add('opacity-50', 'cursor-not-allowed');
+                sendButton.setAttribute('disabled', 'true');
+            }
+        });
+
+        // Submit via Enter (unless Shift+Enter)
+        chatInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (this.value.trim() !== '') sendButton.click();
+            }
+        });
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // 1. Clear input and resize back to default
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            sendButton.classList.add('opacity-50', 'cursor-not-allowed');
+            sendButton.setAttribute('disabled', 'true');
+
+            // 2. Add User Message to Chat
+            appendUserMessage(message);
+            
+            // Push user message to persistent array
+            chatHistory.push({ role: "user", content: message });
+            saveHistory();
+
+            // 3. Add "Thinking..." Bubble
+            const thinkingId = appendThinkingBubble();
+
+            // Grab Result Mode & Condition Preferences
+            const resultMode = document.getElementById('result-mode-select').value;
+            const itemCondition = document.getElementById('condition-select').value;
+
+            try {
+                // 4. Send API Request
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: message, history: chatHistory.slice(-5), result_mode: resultMode, item_condition: itemCondition })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API Error: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // 5. Remove Thinking Bubble
+                document.getElementById(thinkingId).remove();
+
+                // 6. Check response typing
+                if (data.type === 'text') {
+                    appendSystemTextMessage(data.message);
+                    chatHistory.push({ role: "assistant", content: data.message });
+                } else if (data.type === 'products' || data.results) {
+                    // Backwards compatibility with standard results or formal products typing
+                    const productsList = data.data || data.results || [];
+
+                    if (data.suggestion) {
+                        appendSuggestionBubble(data.suggestion);
+                    }
+
+                    if (productsList.length > 0) {
+                        appendSystemProductsContainer(productsList);
+                        chatHistory.push({ role: "assistant", type: "products", data: productsList, suggestion: data.suggestion });
+                    } else {
+                        appendSystemTextMessage("I couldn't find any products matching that search. Let's try different keywords!");
+                        chatHistory.push({ role: "assistant", content: "I couldn't find any products matching that search." });
+                    }
+                } else {
+                    appendSystemTextMessage("I'm not exactly sure how to respond to that.");
+                    chatHistory.push({ role: "assistant", content: "I'm not exactly sure how to respond to that." });
+                }
+                saveHistory();
+
+            } catch (err) {
+                const thinkingBubble = document.getElementById(thinkingId);
+                if (thinkingBubble) {
+                    thinkingBubble.remove();
+                }
+                appendSystemTextMessage(`⚠️ UI Error occurred: ${err.message}`);
+                console.error("Frontend error details:", err);
+            }
+        });
+
+        // ==========================================
+        // UI Render Generators
+        // ==========================================
+
+        function scrollToBottom() {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function appendUserMessage(text) {
+            const div = document.createElement('div');
+            div.className = "flex flex-col items-end self-end max-w-[85%] animate-fade-in";
+            div.innerHTML = `
+                <div class="bg-primary text-white rounded-2xl rounded-tr-sm px-6 py-3 shadow-sm">
+                    <p class="text-[15px] whitespace-pre-wrap">${escapeHTML(text)}</p>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendSystemTextMessage(text) {
+            const div = document.createElement('div');
+            div.className = "flex flex-col items-start max-w-[85%] animate-fade-in";
+            div.innerHTML = `
+                <div class="bg-darkCard border border-white/5 rounded-2xl rounded-tl-sm px-6 py-4 shadow-sm text-slate-200">
+                    <p class="text-[15px] leading-relaxed whitespace-pre-wrap">${escapeHTML(text)}</p>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendSuggestionBubble(text) {
+            const div = document.createElement('div');
+            div.className = "flex flex-col items-start max-w-[85%] animate-fade-in pb-2";
+            div.innerHTML = `
+                <div class="bg-primary/20 border border-primary/30 rounded-2xl rounded-tl-sm px-5 py-4 shadow-sm text-slate-200">
+                    <p class="text-[14px] leading-relaxed italic"><span class="font-bold text-primary not-italic mr-1">💡 Tip:</span> ${escapeHTML(text)}</p>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendThinkingBubble() {
+            const id = 'thinking-' + Date.now();
+            const div = document.createElement('div');
+            div.id = id;
+            div.className = "flex flex-col items-start max-w-[85%] animate-fade-in";
+            div.innerHTML = `
+                <div class="bg-darkCard border border-white/5 rounded-2xl rounded-tl-sm px-6 py-5 shadow-sm">
+                    <div class="dot-flashing ml-3"></div>
+                </div>
+            `;
+            chatContainer.appendChild(div);
+            scrollToBottom();
+            return id;
+        }
+
+        function appendSystemProductsContainer(products) {
+            const div = document.createElement('div');
+            div.className = "flex flex-col items-start w-full animate-fade-in py-2";
+
+            let cardsHtml = '';
+            
+            products.forEach((product, idx) => {
+                const rank = idx + 1;
+                const price = formatCurrency(product.price, product.currency || 'USD');
+                
+                // Color badges depending on platform
+                let badgeStyle = "bg-slate-700 text-white";
+                if(product.platform.toLowerCase() === 'amazon') badgeStyle = "bg-orange-500/10 text-orange-400 border border-orange-500/20";
+                if(product.platform.toLowerCase() === 'ebay') badgeStyle = "bg-yellow-500/10 text-yellow-400 border border-yellow-500/20";
+                if(product.platform.toLowerCase() === 'walmart') badgeStyle = "bg-blue-500/10 text-blue-400 border border-blue-500/20";
+
+                cardsHtml += `
+                    <div class="flex-none w-[280px] bg-darkCard border border-white/10 rounded-2xl p-5 flex flex-col snap-start shrink-0 relative hover:border-white/20 transition-colors">
+                        
+                        <!-- Rank Badge -->
+                        <div class="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-primary text-white font-bold flex items-center justify-center shadow-lg border-2 border-darkBg text-sm z-10">
+                            #${rank}
+                        </div>
+
+                        <!-- Platform -->
+                        <div class="mb-4 text-xs font-bold uppercase tracking-wider self-start px-2 py-1 rounded inline-block ${badgeStyle}">
+                            ${escapeHTML(product.platform)}
+                        </div>
+
+                        <!-- Title -->
+                        <h3 class="text-slate-100 font-semibold text-[15px] leading-snug line-clamp-3 mb-4 flex-1" title="${escapeHTML(product.title)}">
+                            ${escapeHTML(product.title)}
+                        </h3>
+
+                        <!-- Price & Action -->
+                        <div class="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
+                            <span class="text-xl font-extrabold text-white tracking-tight">${price}</span>
+                            <a href="${escapeHTML(product.url)}" target="_blank" rel="noopener noreferrer" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-sm font-semibold rounded-lg transition-colors">
+                                Buy &rarr;
+                            </a>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // The Carousel Container
+            div.innerHTML = `
+                <div class="bg-transparent w-full">
+                    <p class="text-slate-400 text-sm font-medium mb-3 ml-1 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Found ${products.length} live matches:
+                    </p>
+                    <div class="flex gap-4 overflow-x-auto hide-scroll pb-6 snap-x snap-mandatory pt-3 pl-3 pr-6">
+                        ${cardsHtml}
+                    </div>
+                </div>
+            `;
+
+            chatContainer.appendChild(div);
+            scrollToBottom();
+        }
+
+        // ==========================================
+        // Utils
+        // ==========================================
+        
+        function formatCurrency(amount, currency = 'USD') {
+            try {
+                return new Intl.NumberFormat('en-US', {
+                    style: 'currency',
+                    currency: currency,
+                }).format(amount);
+            } catch(e) {
+                return `$${amount}`;
+            }
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function renderHistoryOnLoad() {
+            if (chatHistory.length > 0) {
+                chatHistory.forEach(msg => {
+                    if (msg.role === 'user') {
+                        appendUserMessage(msg.content);
+                    } else if (msg.role === 'assistant') {
+                        if (msg.type === 'products') {
+                            if (msg.suggestion) {
+                                appendSuggestionBubble(msg.suggestion);
+                            }
+                            if (msg.data && msg.data.length > 0) {
+                                appendSystemProductsContainer(msg.data);
+                            }
+                        } else {
+                            if (msg.content && msg.content.startsWith("💡 Tip: ")) {
+                                appendSuggestionBubble(msg.content.replace("💡 Tip: ", ""));
+                            } else {
+                                appendSystemTextMessage(msg.content || "");
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        renderHistoryOnLoad();
+
+    </script>
+</body>
+</html>

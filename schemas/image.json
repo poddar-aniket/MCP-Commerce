@@ -1,0 +1,37 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ImageAnalysisResult",
+  "type": "object",
+  "required": ["category", "brand", "model_hint", "confidence"],
+  "properties": {
+    "category": {
+      "type": "string",
+      "description": "High-level product category (e.g., smartphone, laptop, shoe)"
+    },
+    "brand": {
+      "type": "string",
+      "description": "Detected brand name if visible or inferred"
+    },
+    "model_hint": {
+      "type": "string",
+      "description": "Best guess of model or series from image/OCR"
+    },
+    "color": {
+      "type": "string",
+      "description": "Detected dominant color",
+      "nullable": true
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Confidence score of identification"
+    },
+    "extracted_text": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Text extracted via OCR",
+      "default": []
+    }
+  }
+}
