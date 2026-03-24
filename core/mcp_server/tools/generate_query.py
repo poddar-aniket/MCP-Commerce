@@ -15,10 +15,20 @@ def generate_query_from_text(context):
             or context.get("raw_query")
             or ""
         )
-    else:
-        text = context
-
+        
+        # Return the clean query ALONG with the dynamic constraints.
+        return {
+            "query": text.strip(),
+            "min_price": context.get("min_price"),
+            "max_price": context.get("max_price"),
+            "condition": context.get("condition", "any")
+        }
+    
+    # Legacy fallback if 'context' is just a raw string
+    text = str(context) if context else ""
     return {
         "query": text.strip(),
-        "platform": "amazon"
+        "min_price": None,
+        "max_price": None,
+        "condition": "any"
     }
